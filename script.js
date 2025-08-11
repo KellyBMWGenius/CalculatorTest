@@ -38,19 +38,12 @@ function attachClearOnType(el) {
 function setupFieldFormatting(id, parser, formatter, isInt = false) {
     const el = $(id);
     if (!el) return;
-
     el.setAttribute("inputmode", isInt ? "numeric" : "decimal");
     el.addEventListener("beforeinput", (e) => {
-        if (e.data && !/[0-9.\-]/.test(e.data)) {
-            e.preventDefault();
-        }
-        if (isInt && e.data && !/[0-9]/.test(e.data)) {
-            e.preventDefault();
-        }
+        if (e.data && !/[0-9.\-]/.test(e.data)) { e.preventDefault(); }
+        if (isInt && e.data && !/[0-9]/.test(e.data)) { e.preventDefault(); }
     });
-
     attachClearOnType(el);
-
     el.addEventListener("blur", () => {
         const v = parser(el.value);
         el.value = v ? formatter(v) : "";
@@ -60,129 +53,71 @@ function setupFieldFormatting(id, parser, formatter, isInt = false) {
 function setupFormatters() {
     const moneyFields = ["msrp", "discount", "rebatesLease", "downLease", "rebatesFin", "downFin", "tradeIn"];
     moneyFields.forEach(id => setupFieldFormatting(id, parseMoney, fmtMoneyCompact));
-
     const percentFields = ["taxPct", "residualPct", "ratePct"];
     percentFields.forEach(id => setupFieldFormatting(id, parsePercent, fmtPercentDisp));
-
     setupFieldFormatting("termMonths", parseIntOnly, fmtMonths, true);
 }
 
+// Updated theme switcher logic for the checkbox toggle
 function setupTheme() {
-    const btn = $("themeToggle");
-    if (!btn) return;
-    const KEY = "kbmw_theme";
+    const toggle = $("themeToggleCheckbox");
+    if (!toggle) return;
+    const KEY = "kbmw_calc_theme";
     const body = document.body;
 
-    let saved = null;
-    try { saved = localStorage.getItem(KEY); } catch (_) {}
-    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const startDark = saved ? (saved === "dark") : prefersDark;
+    // Set initial state from localStorage or OS preference
+    let savedTheme = null;
+    try { savedTheme = localStorage.getItem(KEY); } catch (_) {}
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const startDark = savedTheme ? (savedTheme === "dark") : prefersDark;
 
-    body.classList.toggle("dark", startDark);
-    btn.textContent = startDark ? "Light" : "Dark";
+    if (startDark) {
+        body.classList.replace("light", "dark");
+        toggle.checked = true;
+    }
 
-    btn.addEventListener("click", () => {
-        const nowDark = body.classList.toggle("dark");
-        btn.textContent = nowDark ? "Light" : "Dark";
-        try { localStorage.setItem(KEY, nowDark ? "dark" : "light"); } catch (_) {}
+    // Listen for changes on the toggle
+    toggle.addEventListener("change", () => {
+        const isDark = toggle.checked;
+        body.classList.toggle("dark", isDark);
+        body.classList.toggle("light", !isDark);
+        try { localStorage.setItem(KEY, isDark ? "dark" : "light"); } catch (_) {}
     });
 }
 
 // ===== Calculation Logic =====
-
 function calcLease() {
-    const errorEl = $("leaseErrorOut");
-    errorEl.textContent = "";
-
-    const msrp = parseMoney($("msrp").value);
-    const discount = parseMoney($("discount").value);
-    const taxPct = parsePercent($("taxPct").value) / 100;
-    const residualPct = parsePercent($("residualPct").value) / 100;
-    const mfInput = parseFloat(($("moneyFactor").value || "").replace(/[^0-9.\-]/g, "")) || 0;
-    const rebates = parseMoney($("rebatesLease").value);
-    const down = parseMoney($("downLease").value);
-
-    if (msrp <= 0 || residualPct <= 0 || residualPct >= 1) {
-        errorEl.textContent = "Please check MSRP and Residual %.";
-        return;
-    }
-    if (mfInput <= 0 || mfInput > 0.02) {
-        errorEl.textContent = "Money Factor looks off (e.g., 0.00188).";
-        return;
-    }
-
-    const mfUsed = mfInput + MF_MARKUP;
-    const sellingPrice = msrp - discount;
-    const residualValue = msrp * residualPct;
-    
-    // This logic calculates tax on the monthly payment and capitalizes it, common in states like OH.
-    const capReduction = rebates + down;
-    const adjCapCost = sellingPrice + ACQ_FEE + DOC_FEE - capReduction;
-    const monthlyDepreciation = (adjCapCost - residualValue) / TERM_LEASE;
-    const monthlyRentCharge = (adjCapCost + residualValue) * mfUsed;
-    const preTaxPayment = monthlyDepreciation + monthlyRentCharge;
-    
-    const totalLeaseTax = (preTaxPayment * taxPct) * TERM_LEASE;
+    const errorEl = $("leaseErrorOut"); errorEl.textContent = "";
+    const msrp = parseMoney($("msrp").value), discount = parseMoney($("discount").value), taxPct = parsePercent($("taxPct").value) / 100;
+    const residualPct = parsePercent($("residualPct").value) / 100, mfInput = parseFloat(($("moneyFactor").value || "").replace(/[^0-9.\-]/g, "")) || 0;
+    const rebates = parseMoney($("rebatesLease").value), down = parseMoney($("downLease").value);
+    if (msrp <= 0 || residualPct <= 0 || residualPct >= 1) { errorEl.textContent = "Please check MSRP and Residual %."; return; }
+    if (mfInput <= 0 || mfInput > 0.02) { errorEl.textContent = "Money Factor looks off (e.g., 0.00188)."; return; }
+    const mfUsed = mfInput + MF_MARKUP, sellingPrice = msrp - discount, residualValue = msrp * residualPct;
+    const capReduction = rebates + down, adjCapCost = sellingPrice + ACQ_FEE + DOC_FEE - capReduction;
+    const monthlyDepreciation = (adjCapCost - residualValue) / TERM_LEASE, monthlyRentCharge = (adjCapCost + residualValue) * mfUsed;
+    const preTaxPayment = monthlyDepreciation + monthlyRentCharge, totalLeaseTax = (preTaxPayment * taxPct) * TERM_LEASE;
     const capCostWithTax = adjCapCost + totalLeaseTax;
-    
-    const finalDepreciation = (capCostWithTax - residualValue) / TERM_LEASE;
-    const finalRentCharge = (capCostWithTax + residualValue) * mfUsed;
-    const finalMonthlyPayment = finalDepreciation + finalRentCharge;
-
-    const taxOnDown = down * taxPct;
-    const dueAtSigning = finalMonthlyPayment + down + taxOnDown + PLATE_FEE;
-
-    $("leaseResidualOut").textContent = fmtMoney(residualValue);
-    $("leasePaymentOut").textContent = fmtMoney(finalMonthlyPayment);
-    $("leaseDasOut").textContent = fmtMoney(dueAtSigning);
+    const finalDepreciation = (capCostWithTax - residualValue) / TERM_LEASE, finalRentCharge = (capCostWithTax + residualValue) * mfUsed;
+    const finalMonthlyPayment = finalDepreciation + finalRentCharge, taxOnDown = down * taxPct, dueAtSigning = finalMonthlyPayment + down + taxOnDown + PLATE_FEE;
+    $("leaseResidualOut").textContent = fmtMoney(residualValue); $("leasePaymentOut").textContent = fmtMoney(finalMonthlyPayment); $("leaseDasOut").textContent = fmtMoney(dueAtSigning);
 }
-
 function calcFinance() {
-    const errorEl = $("finErrorOut");
-    errorEl.textContent = "";
-
-    const msrp = parseMoney($("msrp").value);
-    const discount = parseMoney($("discount").value);
-    const taxPct = parsePercent($("taxPct").value) / 100;
-    const termMonths = parseIntOnly($("termMonths").value);
-    const ratePct = parsePercent($("ratePct").value) / 100;
-    const rebates = parseMoney($("rebatesFin").value);
-    const down = parseMoney($("downFin").value);
-    const tradeIn = parseMoney($("tradeIn").value);
-
-    if (msrp <= 0 || termMonths <= 0) {
-        errorEl.textContent = "Please check MSRP and Term.";
-        return;
-    }
-    if (ratePct < 0) {
-        errorEl.textContent = "Rate % cannot be negative.";
-        return;
-    }
-
-    const sellingPrice = msrp - discount + DOC_FEE;
-    const taxableBase = (sellingPrice - tradeIn);
+    const errorEl = $("finErrorOut"); errorEl.textContent = "";
+    const msrp = parseMoney($("msrp").value), discount = parseMoney($("discount").value), taxPct = parsePercent($("taxPct").value) / 100;
+    const termMonths = parseIntOnly($("termMonths").value), ratePct = parsePercent($("ratePct").value) / 100;
+    const rebates = parseMoney($("rebatesFin").value), down = parseMoney($("downFin").value), tradeIn = parseMoney($("tradeIn").value);
+    if (msrp <= 0 || termMonths <= 0) { errorEl.textContent = "Please check MSRP and Term."; return; }
+    if (ratePct < 0) { errorEl.textContent = "Rate % cannot be negative."; return; }
+    const sellingPrice = msrp - discount + DOC_FEE, taxableBase = (sellingPrice - tradeIn);
     const totalTax = taxableBase > 0 ? taxableBase * taxPct : 0;
     const principal = (sellingPrice - tradeIn - down - rebates) + totalTax;
-    
-    if (principal < 0) {
-        errorEl.textContent = "Loan amount is negative. Check inputs.";
-        return;
-    }
-
+    if (principal < 0) { errorEl.textContent = "Loan amount is negative. Check inputs."; return; }
     let payment;
-    if (ratePct > 0) {
-        const r = ratePct / 12;
-        const pow = (1 + r) ** termMonths;
-        payment = principal * (r * pow) / (pow - 1);
-    } else {
-        payment = principal / termMonths;
-    }
-
+    if (ratePct > 0) { const r = ratePct / 12, pow = (1 + r) ** termMonths; payment = principal * (r * pow) / (pow - 1); }
+    else { payment = principal / termMonths; }
     const dueAtSigning = (payment || 0) + PLATE_FEE + down;
-
-    $("loanAmountOut").textContent = fmtMoney(principal);
-    $("finPaymentOut").textContent = fmtMoney(payment);
-    $("finDasOut").textContent = fmtMoney(dueAtSigning);
+    $("loanAmountOut").textContent = fmtMoney(principal); $("finPaymentOut").textContent = fmtMoney(payment); $("finDasOut").textContent = fmtMoney(dueAtSigning);
 }
 
 // ===== Wire up Event Listeners =====
