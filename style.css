@@ -44,7 +44,7 @@ body{
   margin: 0 auto;
   padding: 1rem 1.25rem;
   display: flex;
-  justify-content: flex-end; /* Aligns switch to the right */
+  justify-content: space-between; /* Aligns switch to the right */
   align-items: center;
 }
 .theme-switch-wrapper {
