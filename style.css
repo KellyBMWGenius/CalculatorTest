@@ -46,6 +46,8 @@ body{
 /* display band */
 .display-strip{background:var(--display-bg);color:var(--display-text);padding:18px;border-bottom:1px solid var(--border)}
 .display-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.display-grid h2{margin:0;font-weight:700}
+.display-grid .disclaimer{text-align:right}
 .disclaimer{margin:0;opacity:.75;font-size:12px}
 
 /* inner content area */
@@ -101,7 +103,14 @@ body.dark .field input{background:linear-gradient(180deg,rgba(20,26,34,.9),rgba(
 .card .grid + .btn{ margin-top: var(--space-4); }
 #calcLease, #calcFin { margin-top: var(--space-3); } /* fallback */
 
-/* separators & outputs */
+/* separators, errors & outputs */
+.error-message {
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 14px;
+  padding-top: 12px;
+  min-height: 20px;
+}
 hr{border:none;height:1px;background:var(--border);margin:16px 0}
 .outputs .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed var(--border)}
 .outputs .row:last-child{border-bottom:none}
