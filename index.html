@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Kelly BMW Lease & Finance Calculator</title>
+<link rel="stylesheet" href="style.css?v=5" />
+</head>
+<body class="light">
+<header class="topbar">
+  <h1>Kelly BMW Lease &amp; Finance Calculator</h1>
+  <button id="themeToggle" class="btn secondary">Dark</button>
+</header>
+
+<main class="container">
+  <div class="app">
+    <div class="display-strip">
+      <div class="display-grid">
+        <h2 style="margin:0;font-weight:700;">Calculator</h2>
+        <p class="disclaimer" style="text-align:right;">For display only — not an official quote.</p>
+      </div>
+    </div>
+
+    <div class="pad">
+      <!-- Vehicle & Tax -->
+      <section class="card">
+        <h2>Vehicle &amp; Tax</h2>
+        <div class="grid grid-3">
+          <label class="field">
+            <span>MSRP</span>
+            <input id="msrp" inputmode="decimal" placeholder="$" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Discount</span>
+            <input id="discount" inputmode="decimal" placeholder="$" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Sales Tax %</span>
+            <input id="taxPct" inputmode="decimal" placeholder="%" autocomplete="off" />
+          </label>
+        </div>
+      </section>
+
+      <div class="columns">
+        <!-- Lease -->
+        <section class="card">
+          <h2>Lease</h2>
+          <div class="grid">
+            <label class="field">
+              <span>Residual %</span>
+              <input id="residualPct" inputmode="decimal" placeholder="%" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Money Factor</span>
+              <input id="moneyFactor" inputmode="decimal" placeholder="e.g. 0.00188" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Rebates</span>
+              <input id="rebatesLease" inputmode="decimal" placeholder="$" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Money Down</span>
+              <input id="downLease" inputmode="decimal" placeholder="$" autocomplete="off" />
+            </label>
+          </div>
+          <button id="calcLease" class="btn">Calculate Lease</button>
+          <hr />
+          <div class="outputs">
+            <div class="row"><span>Residual Value</span><strong id="leaseResidualOut">—</strong></div>
+            <div class="row"><span>Monthly Payment</span><strong id="leasePaymentOut">—</strong></div>
+            <div class="row"><span>Due at Signing</span><strong id="leaseDasOut">—</strong></div>
+          </div>
+        </section>
+
+        <!-- Finance -->
+        <section class="card">
+          <h2>Finance</h2>
+          <div class="grid">
+            <label class="field">
+              <span>Term (months)</span>
+              <input id="termMonths" inputmode="numeric" placeholder="e.g. 60" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Rate % (APR)</span>
+              <input id="ratePct" inputmode="decimal" placeholder="%" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Rebates</span>
+              <input id="rebatesFin" inputmode="decimal" placeholder="$" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Money Down</span>
+              <input id="downFin" inputmode="decimal" placeholder="$" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Trade-In Value</span>
+              <input id="tradeIn" inputmode="decimal" placeholder="$" autocomplete="off" />
+            </label>
+          </div>
+          <button id="calcFin" class="btn">Calculate Finance</button>
+          <hr />
+          <div class="outputs">
+            <div class="row"><span>Total Loan Amount</span><strong id="loanAmountOut">—</strong></div>
+            <div class="row"><span>Monthly Payment</span><strong id="finPaymentOut">—</strong></div>
+            <div class="row"><span>Due at Signing</span><strong id="finDasOut">—</strong></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ===== logic (unchanged, with formatters) ===== */
+const TERM_LEASE=36, ACQ_FEE=925, DOC_FEE=387, MF_MARKUP=0.0004, PLATE_FEE=75;
+const moneyRe=/[^0-9.\-]/g, percentRe=/[^0-9.\-]/g;
+const $=id=>document.getElementById(id);
+const parseMoney=s=>{s=(s||"").trim();return s?parseFloat(s.replace(moneyRe,""))||0:0}
+const parsePercent=s=>{s=(s||"").trim();return s?parseFloat(s.replace(percentRe,""))||0:0}
+const parseIntOnly=s=>{s=(s||"").trim();const n=parseInt(s.replace(/[^0-9]/g,""),10);return isNaN(n)?0:n}
+const fmtMoney=x=>x.toLocaleString(undefined,{style:"currency",currency:"USD",maximumFractionDigits:2});
+const fmtMoneyCompact=x=>Math.abs(x-Math.round(x))<1e-9?`$${Math.round(x).toLocaleString()}`:fmtMoney(x);
+const fmtPercentDisp=x=>Math.abs(x-Math.round(x))<1e-9?`${Math.round(x)}%`:`${x.toFixed(2)}%`;
+
+function setupFormatters(){
+  const moneyIds=["msrp","discount","rebatesLease","downLease","rebatesFin","downFin","tradeIn"];
+  moneyIds.forEach(id=>{
+    const el=$(id); if(!el) return;
+    el.addEventListener("focus",()=>{el.dataset.justFocused="1"; try{el.select();}catch{}});
+    el.addEventListener("keydown",e=>{
+      if(el.dataset.justFocused==="1"){
+        if(e.key.length===1||e.key==="Backspace"||e.key==="Delete"){el.value=""; el.dataset.justFocused="0";}
+      }
+    });
+    el.addEventListener("blur",()=>{const v=parseMoney(el.value); el.value=v?fmtMoneyCompact(v):""; el.dataset.justFocused="0";});
+  });
+
+  const pctIds=["taxPct","residualPct","ratePct"];
+  pctIds.forEach(id=>{
+    const el=$(id); if(!el) return;
+    el.addEventListener("focus",()=>{el.dataset.justFocused="1"; try{el.select();}catch{}});
+    el.addEventListener("keydown",e=>{
+      if(el.dataset.justFocused==="1"){
+        if(e.key.length===1||e.key==="Backspace"||e.key==="Delete"){el.value=""; el.dataset.justFocused="0";}
+      }
+    });
+    el.addEventListener("blur",()=>{const v=parsePercent(el.value); el.value=v?fmtPercentDisp(v):""; el.dataset.justFocused="0";});
+  });
+
+  const tm=$("termMonths");
+  if(tm){
+    tm.addEventListener("focus",()=>{tm.dataset.justFocused="1"; try{tm.select();}catch{}});
+    tm.addEventListener("keydown",e=>{
+      if(tm.dataset.justFocused==="1"){
+        if(e.key.length===1||e.key==="Backspace"||e.key==="Delete"){tm.value=""; tm.dataset.justFocused="0";}
+      }
+    });
+    tm.addEventListener("blur",()=>{const n=parseIntOnly(tm.value); tm.value=n?`${n} months`:""; tm.dataset.justFocused="0";});
+  }
+}
+
+function setupTheme(){
+  const btn=$("themeToggle"), body=document.body;
+  if(!btn) return;
+  btn.addEventListener("click",()=>{const dark=body.classList.toggle("dark"); btn.textContent=dark?"Light":"Dark";});
+}
+
+function calcLease(){
+  const msrp=parseMoney($("msrp").value), discount=parseMoney($("discount").value), taxPct=parsePercent($("taxPct").value)/100;
+  const residualPct=parsePercent($("residualPct").value)/100;
+  const mfInput=parseFloat( ($("moneyFactor").value||"").replace(percentRe,"") )||0;
+  const rebates=parseMoney($("rebatesLease").value), down=parseMoney($("downLease").value);
+  if(msrp<=0 || residualPct<=0 || residualPct>=1){alert("Please check MSRP and Residual %.");return;}
+  if(mfInput<0 || mfInput>0.02){alert("Money Factor looks off (e.g., 0.00188).");return;}
+  const mfUsed=mfInput+MF_MARKUP, sellingPrice=msrp-discount;
+  const capReduction=rebates+down;
+  const C17=sellingPrice+ACQ_FEE+DOC_FEE-capReduction;
+  const C18=msrp*residualPct;
+  const C19=(C17+C18)*mfUsed;
+  const C20=(C17-C18)/TERM_LEASE;
+  const C21=C19+C20; // pre-tax
+  const C23=C21*taxPct, C24=C23*TERM_LEASE, C26=C17+C24;
+  const E19=(C26+C18)*mfUsed, E20=(C26-C18)/TERM_LEASE, E21=E19+E20; // with tax
+  const taxOnDown=down*taxPct, das=E21+down+taxOnDown+PLATE_FEE;
+  $("leaseResidualOut").textContent=fmtMoney(C18);
+  $("leasePaymentOut").textContent=fmtMoney(E21);
+  $("leaseDasOut").textContent=fmtMoney(das);
+}
+
+function calcFinance(){
+  const msrp=parseMoney($("msrp").value), discount=parseMoney($("discount").value), taxPct=parsePercent($("taxPct").value)/100;
+  const termMonths=parseIntOnly($("termMonths").value), ratePct=parsePercent($("ratePct").value)/100;
+  const rebates=parseMoney($("rebatesFin").value), down=parseMoney($("downFin").value), tradeIn=parseMoney($("tradeIn").value);
+  if(msrp<=0 || termMonths<=0){alert("Please check MSRP and Term.");return;}
+  if(ratePct<0){alert("Rate % cannot be negative.");return;}
+  const sellingPrice=msrp-discount+DOC_FEE;
+  const taxableBase=(sellingPrice-tradeIn)+down+rebates;
+  const totalTax=taxableBase*taxPct;
+  const principal=(sellingPrice-tradeIn-down-rebates)+totalTax;
+  if(principal<0){alert("Computed loan amount is negative. Reduce cash/trade/rebates.");return;}
+  let payment;
+  if(ratePct>0){const r=ratePct/12, pow=(1+r)**termMonths; payment=principal*(r*pow)/(pow-1);}
+  else{payment=principal/termMonths;}
+  const das=payment+PLATE_FEE+down;
+  $("loanAmountOut").textContent=fmtMoney(principal);
+  $("finPaymentOut").textContent=fmtMoney(payment);
+  $("finDasOut").textContent=fmtMoney(das);
+}
+
+window.addEventListener("DOMContentLoaded", ()=>{
+  setupFormatters(); setupTheme();
+  $("calcLease").addEventListener("click", calcLease);
+  $("calcFin").addEventListener("click", calcFinance);
+});
+</script>
+</body>
+</html>
