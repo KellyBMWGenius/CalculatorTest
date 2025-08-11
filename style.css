@@ -38,24 +38,42 @@ body{
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Top bar & New Toggle Switch */
+/* Top bar, Logo, & New Toggle Switch */
 .topbar {
   max-width: 1024px;
   margin: 0 auto;
   padding: 1rem 1.25rem;
   display: flex;
-  justify-content: space-between; /* Aligns switch to the right */
+  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+}
+.logo-link { text-decoration: none; flex-shrink: 0; }
+.logo {
+  background-image: url('KellyLogoLightBackground.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: left center;
+  width: 150px;
+  height: 32px;
+  display: block;
+}
+body.dark .logo {
+  background-image: url('KellyLogoDarkBackground.png');
+}
+.topbar h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
 }
 .theme-switch-wrapper {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
-}
-.theme-switch-wrapper label {
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--text-secondary);
+  flex-shrink: 0;
 }
 .theme-switch {
   position: relative;
@@ -63,11 +81,7 @@ body{
   width: 50px;
   height: 28px;
 }
-.theme-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+.theme-switch input { opacity: 0; width: 0; height: 0; }
 .slider {
   position: absolute;
   cursor: pointer;
@@ -87,12 +101,8 @@ body{
   transition: .4s;
   border-radius: 50%;
 }
-input:checked + .slider {
-  background-color: var(--toggle-bg);
-}
-input:checked + .slider:before {
-  transform: translateX(22px);
-}
+input:checked + .slider { background-color: var(--toggle-bg); }
+input:checked + .slider:before { transform: translateX(22px); }
 
 /* App shell */
 .container{max-width:1024px; margin:0 auto 40px; padding:0 1.25rem}
@@ -139,9 +149,7 @@ input:checked + .slider:before {
   width: 100%;
   transition: background-color 0.2s ease;
 }
-.btn:hover {
-  filter: brightness(1.1);
-}
+.btn:hover { filter: brightness(1.1); }
 .card .grid + .btn{ margin-top: 1.5rem; }
 
 /* Separators, errors & outputs */
