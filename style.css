@@ -48,6 +48,13 @@ body{
   height: 32px;
   display: block;
 }
+.topbar h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  opacity: .95;
+  white-space: nowrap; /* Prevents title from wrapping on small screens */
+}
 
 /* outer shell */
 .container{max-width:1100px;margin:0 auto 40px;padding:0 18px}
