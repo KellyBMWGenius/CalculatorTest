@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Kelly BMW Lease & Finance Calculator</title>
-<link rel="stylesheet" href="style.css?v=5" />
+<link rel="stylesheet" href="style.css" />
 </head>
 <body class="light">
 <header class="topbar">
@@ -16,54 +16,53 @@
   <div class="app">
     <div class="display-strip">
       <div class="display-grid">
-        <h2 style="margin:0;font-weight:700;">Calculator</h2>
-        <p class="disclaimer" style="text-align:right;">For display only — not an official quote.</p>
+        <h2>Calculator</h2>
+        <p class="disclaimer">For display only — not an official quote.</p>
       </div>
     </div>
 
     <div class="pad">
-      <!-- Vehicle & Tax -->
       <section class="card">
         <h2>Vehicle &amp; Tax</h2>
         <div class="grid grid-3">
           <label class="field">
             <span>MSRP</span>
-            <input id="msrp" inputmode="decimal" placeholder="$" autocomplete="off" />
+            <input id="msrp" placeholder="$" autocomplete="off" />
           </label>
           <label class="field">
             <span>Discount</span>
-            <input id="discount" inputmode="decimal" placeholder="$" autocomplete="off" />
+            <input id="discount" placeholder="$" autocomplete="off" />
           </label>
           <label class="field">
             <span>Sales Tax %</span>
-            <input id="taxPct" inputmode="decimal" placeholder="%" autocomplete="off" />
+            <input id="taxPct" placeholder="%" autocomplete="off" />
           </label>
         </div>
       </section>
 
       <div class="columns">
-        <!-- Lease -->
         <section class="card">
           <h2>Lease</h2>
           <div class="grid">
             <label class="field">
               <span>Residual %</span>
-              <input id="residualPct" inputmode="decimal" placeholder="%" autocomplete="off" />
+              <input id="residualPct" placeholder="%" autocomplete="off" />
             </label>
             <label class="field">
               <span>Money Factor</span>
-              <input id="moneyFactor" inputmode="decimal" placeholder="e.g. 0.00188" autocomplete="off" />
+              <input id="moneyFactor" placeholder="e.g. 0.00188" autocomplete="off" />
             </label>
             <label class="field">
               <span>Rebates</span>
-              <input id="rebatesLease" inputmode="decimal" placeholder="$" autocomplete="off" />
+              <input id="rebatesLease" placeholder="$" autocomplete="off" />
             </label>
             <label class="field">
               <span>Money Down</span>
-              <input id="downLease" inputmode="decimal" placeholder="$" autocomplete="off" />
+              <input id="downLease" placeholder="$" autocomplete="off" />
             </label>
           </div>
           <button id="calcLease" class="btn">Calculate Lease</button>
+          <div class="error-message" id="leaseErrorOut"></div>
           <hr />
           <div class="outputs">
             <div class="row"><span>Residual Value</span><strong id="leaseResidualOut">—</strong></div>
@@ -72,32 +71,32 @@
           </div>
         </section>
 
-        <!-- Finance -->
         <section class="card">
           <h2>Finance</h2>
           <div class="grid">
             <label class="field">
               <span>Term (months)</span>
-              <input id="termMonths" inputmode="numeric" placeholder="e.g. 60" autocomplete="off" />
+              <input id="termMonths" placeholder="e.g. 60" autocomplete="off" />
             </label>
             <label class="field">
               <span>Rate % (APR)</span>
-              <input id="ratePct" inputmode="decimal" placeholder="%" autocomplete="off" />
+              <input id="ratePct" placeholder="%" autocomplete="off" />
             </label>
             <label class="field">
               <span>Rebates</span>
-              <input id="rebatesFin" inputmode="decimal" placeholder="$" autocomplete="off" />
+              <input id="rebatesFin" placeholder="$" autocomplete="off" />
             </label>
             <label class="field">
               <span>Money Down</span>
-              <input id="downFin" inputmode="decimal" placeholder="$" autocomplete="off" />
+              <input id="downFin" placeholder="$" autocomplete="off" />
             </label>
             <label class="field">
               <span>Trade-In Value</span>
-              <input id="tradeIn" inputmode="decimal" placeholder="$" autocomplete="off" />
+              <input id="tradeIn" placeholder="$" autocomplete="off" />
             </label>
           </div>
           <button id="calcFin" class="btn">Calculate Finance</button>
+          <div class="error-message" id="finErrorOut"></div>
           <hr />
           <div class="outputs">
             <div class="row"><span>Total Loan Amount</span><strong id="loanAmountOut">—</strong></div>
