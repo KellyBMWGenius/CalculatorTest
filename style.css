@@ -40,13 +40,16 @@ body{
 .topbar{max-width:1100px;margin:18px auto 10px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .logo-link { text-decoration: none; }
 .logo {
-  background-image: url('KellyLogoLightBackground.png');
+  background-image: url('KellyLogoLightBackground.png'); /* Default light mode logo */
   background-size: contain;
   background-repeat: no-repeat;
   background-position: left center;
   width: 150px;
   height: 32px;
   display: block;
+}
+body.dark .logo {
+  background-image: url('KellyLogoDarkBackground.png'); /* Dark mode logo override */
 }
 .topbar h1 {
   margin: 0;
